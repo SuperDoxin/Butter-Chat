@@ -1,12 +1,31 @@
 # -*- coding: utf-8 -*-
+import re
 import zlib
 
 from . import protocol
 
 from . import versions  # noqa nosort
 from gi.repository import Gdk  # noqa nosort
-from gi.repository import Gtk  # noqa nosort
+from gi.repository import GLib  # noqa nosort
 from gi.repository import GObject  # noqa nosort
+from gi.repository import Gtk  # noqa nosort
+
+
+def markup_urls(text):
+    output = []
+    matches = re.finditer(
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
+        text,
+    )
+    offset = 0
+    for m in matches:
+        print(offset, m.start())
+        output.append(GLib.markup_escape_text(text[offset : m.start()]))
+        escaped_url = GLib.markup_escape_text(m[0])
+        output.append('<a href="' + escaped_url + '">' + escaped_url + "</a>")
+        offset = m.end()
+    output.append(GLib.markup_escape_text(text[offset:]))
+    return "".join(output)
 
 
 def add_css_class(widget, class_):
@@ -40,9 +59,11 @@ class Message(Gtk.VBox):
         add_css_class(author_label, self._name_to_color_class(author))
         self.pack_start(author_label, False, False, 0)
 
-        message_label = Gtk.Label(label=message)
+        message_label = Gtk.Label()
+        message_label.set_markup(markup_urls(message))
         message_label.set_xalign(0)
         message_label.set_line_wrap(True)
+        message_label.set_selectable(True)
         add_css_class(message_label, "message-label")
         self.pack_start(message_label, False, False, 0)
 
@@ -96,7 +117,7 @@ class Channel(Gtk.VBox):
 
     def on_topic_changed(self, topic):
         if topic:
-            self.topic.set_text(topic)
+            self.topic.set_markup(markup_urls(topic))
         else:
             self.topic.set_text("No topic set.")
 
