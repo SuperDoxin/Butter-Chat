@@ -1,0 +1,117 @@
+.channel-switcher button{
+    border: none;
+    background: none;
+    border-radius: 0;
+}
+.channel-switcher button:checked{
+    background: @theme_selected_bg_color;
+    color: @theme_selected_fg_color;
+}
+
+.topic {
+    border-bottom: 1px solid @insensitive_fg_color;
+    padding: 10px;
+    margin-bottom: 10px
+}
+
+.message{
+    background: @theme_base_color;
+    border-radius: 8px 8px 8px 0px;
+    margin:4px;
+    padding: 4px 8px;
+}
+
+.message .author{
+    font-weight: 500;
+}
+
+.label_color_h00{color:#e6007b;}
+.label_color_h04{color:#e70072;}
+.label_color_h08{color:#e70069;}
+.label_color_h12{color:#e70060;}
+.label_color_h16{color:#e70558;}
+.label_color_h20{color:#e5124f;}
+.label_color_h24{color:#e41c46;}
+.label_color_h28{color:#e1253e;}
+.label_color_h32{color:#df2d35;}
+.label_color_h36{color:#db342c;}
+.label_color_h40{color:#d83b23;}
+.label_color_h44{color:#d34118;}
+.label_color_h48{color:#cf470a;}
+.label_color_h52{color:#ca4d00;}
+.label_color_h56{color:#c55200;}
+.label_color_h60{color:#bf5700;}
+.label_color_h64{color:#b95c00;}
+.label_color_h68{color:#b36100;}
+.label_color_h72{color:#ac6500;}
+.label_color_h76{color:#a56900;}
+.label_color_h80{color:#9e6d00;}
+.label_color_h84{color:#967100;}
+.label_color_h88{color:#8f7400;}
+.label_color_h92{color:#877700;}
+.label_color_h96{color:#7e7a00;}
+.label_color_h100{color:#767c00;}
+.label_color_h104{color:#6c7f00;}
+.label_color_h108{color:#638100;}
+.label_color_h112{color:#598300;}
+.label_color_h116{color:#4d8500;}
+.label_color_h120{color:#418700;}
+.label_color_h124{color:#328900;}
+.label_color_h128{color:#1d8a00;}
+.label_color_h132{color:#008b00;}
+.label_color_h136{color:#008d00;}
+.label_color_h140{color:#008e00;}
+.label_color_h144{color:#008f16;}
+.label_color_h148{color:#008f24;}
+.label_color_h152{color:#00902f;}
+.label_color_h156{color:#00913a;}
+.label_color_h160{color:#009144;}
+.label_color_h164{color:#00924e;}
+.label_color_h168{color:#009257;}
+.label_color_h172{color:#009361;}
+.label_color_h176{color:#00936b;}
+.label_color_h180{color:#009374;}
+.label_color_h184{color:#00937e;}
+.label_color_h188{color:#009388;}
+.label_color_h192{color:#009391;}
+.label_color_h196{color:#00939a;}
+.label_color_h200{color:#0093a3;}
+.label_color_h204{color:#0093ac;}
+.label_color_h208{color:#0093b5;}
+.label_color_h212{color:#0092bd;}
+.label_color_h216{color:#0092c5;}
+.label_color_h220{color:#0091cd;}
+.label_color_h224{color:#0090d4;}
+.label_color_h228{color:#0090db;}
+.label_color_h232{color:#008fe2;}
+.label_color_h236{color:#008de8;}
+.label_color_h240{color:#008ced;}
+.label_color_h244{color:#008bf2;}
+.label_color_h248{color:#0089f6;}
+.label_color_h252{color:#0087f9;}
+.label_color_h256{color:#0085fc;}
+.label_color_h260{color:#0083fe;}
+.label_color_h264{color:#0081ff;}
+.label_color_h268{color:#007eff;}
+.label_color_h272{color:#007bff;}
+.label_color_h276{color:#0078ff;}
+.label_color_h280{color:#0075fe;}
+.label_color_h284{color:#2f71fc;}
+.label_color_h288{color:#4c6dfa;}
+.label_color_h292{color:#6169f7;}
+.label_color_h296{color:#7265f3;}
+.label_color_h300{color:#8160ee;}
+.label_color_h304{color:#8e5be9;}
+.label_color_h308{color:#9956e3;}
+.label_color_h312{color:#a450dd;}
+.label_color_h316{color:#ae4ad7;}
+.label_color_h320{color:#b644d0;}
+.label_color_h324{color:#be3ec8;}
+.label_color_h328{color:#c637c0;}
+.label_color_h332{color:#cc2fb8;}
+.label_color_h336{color:#d227b0;}
+.label_color_h340{color:#d71fa7;}
+.label_color_h344{color:#db159f;}
+.label_color_h348{color:#df0896;}
+.label_color_h352{color:#e2008d;}
+.label_color_h356{color:#e40084;}
