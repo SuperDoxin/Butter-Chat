@@ -73,6 +73,7 @@ class Message(Gtk.VBox):
 
 
 class MessageList(Gtk.VBox):
+    # TODO: make me collapsible
     def add_message(self, author, message):
         message = Message(author, message)
         self.pack_start(message, False, False, 0)
