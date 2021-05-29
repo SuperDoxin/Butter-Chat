@@ -65,12 +65,12 @@ class Channel(Gtk.VBox):
         self.port = port
         self.channel = channel
 
-        topic = Gtk.Label(label="No topic set.")
-        topic.set_line_wrap(True)
-        topic.set_justify(Gtk.Justification.LEFT)
-        topic.set_xalign(0)
-        add_css_class(topic, "topic")
-        self.pack_start(topic, False, False, 0)
+        self.topic = Gtk.Label(label="No topic set.")
+        self.topic.set_line_wrap(True)
+        self.topic.set_justify(Gtk.Justification.LEFT)
+        self.topic.set_xalign(0)
+        add_css_class(self.topic, "topic")
+        self.pack_start(self.topic, False, False, 0)
 
         vbox = Gtk.VBox()
         self.pack_start(vbox, True, True, 0)
@@ -93,6 +93,12 @@ class Channel(Gtk.VBox):
     def send_message(self, widget):
         protocol.send_message(self.host, self.port, self.channel, widget.get_text())
         widget.set_text("")
+
+    def on_topic_changed(self, topic):
+        if topic:
+            self.topic.set_text(topic)
+        else:
+            self.topic.set_text("No topic set.")
 
 
 class ChatWindow(Gtk.Window):
@@ -126,6 +132,7 @@ class ChatWindow(Gtk.Window):
 
         protocol.register_handler("channel_joined", self.on_channel_joined)
         protocol.register_handler("message_received", self.on_message_received)
+        protocol.register_handler("topic_changed", self.on_topic_changed)
 
         protocol.connect("butter-client", "irc.libera.chat")
 
@@ -140,3 +147,9 @@ class ChatWindow(Gtk.Window):
         channel_widget = self.channel_stack.get_child_by_name(channel_id)
         if channel_widget:
             channel_widget.on_message_received(user, message)
+
+    def on_topic_changed(self, *, topic, channel, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_topic_changed(topic)

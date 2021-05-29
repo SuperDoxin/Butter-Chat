@@ -41,6 +41,15 @@ class IRCClient(irc.IRCClient):
             port=self.factory.port,
         )
 
+    def topicUpdated(self, user, channel, newTopic):
+        _call_handler(
+            "topic_changed",
+            topic=newTopic,
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
 
 class IRCClientFactory(protocol.ClientFactory):
     def __init__(self, nickname, host, port):
