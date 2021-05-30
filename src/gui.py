@@ -357,6 +357,7 @@ class ChatWindow(Gtk.Window):
         channel_widget = Channel(host, port, channel)
         channel_widget.show_all()
         self.channel_stack.add_titled(channel_widget, channel_id, channel)
+        self.channel_stack.set_visible_child(channel_widget)
 
     def on_message_received(self, *, user, message, channel, host, port):
         channel_widget = self.get_channel_widget(channel, host, port, True)
