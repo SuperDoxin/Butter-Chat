@@ -105,6 +105,7 @@ class Action(Gtk.HBox):
         message_label.set_markup(
             markup_urls(author + " " + message, lambda text: markup_names(text, names))
         )
+        message_label.set_xalign(0)
         message_label.set_line_wrap(True)
         message_label.set_selectable(True)
         add_css_class(message_label, "message-label")
@@ -125,6 +126,7 @@ class Notice(Gtk.HBox):
         message_label.set_markup(
             markup_urls(message, lambda text: markup_names(text, names))
         )
+        message_label.set_xalign(0)
         message_label.set_line_wrap(True)
         message_label.set_selectable(True)
         add_css_class(message_label, "message-label")
