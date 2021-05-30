@@ -1,5 +1,7 @@
 # Butter chat
 
+![A screenshot of butter chat](screenshot.png)
+
 Butter chat aims to be a modern IRC chat client with all the UI nicities
 users have come to expect from a chat client.
 
