@@ -103,6 +103,16 @@ class IRCClient(ImprovedBaseIRCClient):
             port=self.factory.port,
         )
 
+    def action(self, user, channel, message):
+        _call_handler(
+            "action_received",
+            user=user.split("!")[0],
+            message=message,
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
     def topicUpdated(self, user, channel, newTopic):
         _call_handler(
             "topic_changed",

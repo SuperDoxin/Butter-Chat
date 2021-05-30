@@ -59,6 +59,7 @@ def add_css_class(widget, class_):
 
 
 class ChannelList(Gtk.StackSwitcher):
+    # TODO: make me collapsible
     def __init__(self):
         Gtk.StackSwitcher.__init__(self)
         self.set_orientation(Gtk.Orientation.VERTICAL)
@@ -73,7 +74,7 @@ class ChannelStack(Gtk.Stack):
 
 class Message(Gtk.VBox):
     def __init__(self, author, message, names):
-        Gtk.HBox.__init__(self)
+        Gtk.VBox.__init__(self)
         self.set_hexpand(False)
         add_css_class(self, "message")
         self.props.halign = Gtk.Align.START
@@ -95,10 +96,29 @@ class Message(Gtk.VBox):
         self.pack_start(message_label, False, False, 0)
 
 
+class Action(Gtk.HBox):
+    def __init__(self, author, message, names):
+        Gtk.HBox.__init__(self)
+        add_css_class(self, "action")
+
+        message_label = Gtk.Label()
+        message_label.set_markup(
+            markup_urls(author + " " + message, lambda text: markup_names(text, names))
+        )
+        message_label.set_line_wrap(True)
+        message_label.set_selectable(True)
+        add_css_class(message_label, "message-label")
+        self.pack_start(message_label, False, False, 0)
+
+
 class MessageList(Gtk.VBox):
-    # TODO: make me collapsible
     def add_message(self, author, message, names):
         message = Message(author, message, names)
+        self.pack_start(message, False, False, 0)
+        message.show_all()
+
+    def add_action(self, author, message, names):
+        message = Action(author, message, names)
         self.pack_start(message, False, False, 0)
         message.show_all()
 
@@ -191,6 +211,9 @@ class Channel(Gtk.VBox):
     def on_message_received(self, user, message):
         self.message_list.add_message(user, message, self.names)
 
+    def on_action_received(self, user, message):
+        self.message_list.add_action(user, message, self.names)
+
     def send_message(self, widget):
         protocol.send_message(self.host, self.port, self.channel, widget.get_text())
         widget.set_text("")
@@ -247,6 +270,7 @@ class ChatWindow(Gtk.Window):
 
         protocol.register_handler("channel_joined", self.on_channel_joined)
         protocol.register_handler("message_received", self.on_message_received)
+        protocol.register_handler("action_received", self.on_action_received)
         protocol.register_handler("topic_changed", self.on_topic_changed)
         protocol.register_handler("user_joined", self.on_user_joined)
         protocol.register_handler("user_left", self.on_user_left)
@@ -279,6 +303,12 @@ class ChatWindow(Gtk.Window):
         channel_widget = self.channel_stack.get_child_by_name(channel_id)
         if channel_widget:
             channel_widget.on_message_received(user, message)
+
+    def on_action_received(self, *, user, message, channel, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_action_received(user, message)
 
     def on_topic_changed(self, *, topic, channel, host, port):
         channel_id = f"{host}:{port}/{channel}"

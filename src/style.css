@@ -21,8 +21,8 @@
     padding: 4px 8px;
 }
 
-.message .author{
-    font-weight: 500;
+.action{
+    margin: 4px;
 }
 
 .label_color_h00{color:#e6007b;}
