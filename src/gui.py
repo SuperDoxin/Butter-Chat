@@ -300,7 +300,7 @@ class ChatWindow(Gtk.Window):
         self.set_default_size(600, 400)
 
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_path("src/style.css")  # TODO: autodetect this path
+        css_provider.load_from_path("style.css")
         screen = Gdk.Screen.get_default()
         style_context = self.get_style_context()
         style_context.add_provider_for_screen(
