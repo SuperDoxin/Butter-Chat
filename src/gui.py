@@ -103,6 +103,56 @@ class MessageList(Gtk.VBox):
         message.show_all()
 
 
+class MessageEntry(Gtk.Entry):
+    def __init__(self):
+        Gtk.Entry.__init__(self)
+        self.set_icon_from_icon_name(
+            Gtk.EntryIconPosition.SECONDARY, "go-next-symbolic"
+        )
+        self.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
+        self.set_icon_sensitive(Gtk.EntryIconPosition.SECONDARY, True)
+
+        self.completion = Gtk.EntryCompletion()
+        self.completion.set_match_func(self.match, None)
+        self.completion.connect("match-selected", self.on_match)
+        self.set_completion(self.completion)
+
+        self.list_store = Gtk.ListStore(GObject.TYPE_STRING)
+        self.completion.set_model(self.list_store)
+        self.completion.set_text_column(0)
+
+    def set_completions(self, completions):
+        self.list_store.clear()
+        for completion in completions:
+            self.list_store.append((completion,))
+
+    def match(self, completion, key, tree_iter, data):
+        model = self.completion.get_model()
+        completion_string = model[tree_iter][0]
+
+        if " " in key:
+            key = key.split(" ")[-1]
+
+        return completion_string.lower().startswith(key.lower())
+
+    def on_match(self, completion, model, tree_iter):
+        # TODO: deal with the cursor not being at the end of the line better
+
+        text = self.get_text()
+        if " " in text:
+            text = text.rpartition(" ")[0] + " "
+            suffix = " "
+        else:
+            text = ""
+            suffix = ": "
+
+        text += model[tree_iter][0] + suffix
+        self.set_text(text)
+        self.set_position(-1)
+
+        return True
+
+
 class Channel(Gtk.VBox):
     def __init__(self, host, port, channel):
         Gtk.VBox.__init__(self)
@@ -125,20 +175,17 @@ class Channel(Gtk.VBox):
         self.message_list = MessageList()
         vbox.pack_start(self.message_list, True, True, 0)
 
-        text_entry = Gtk.Entry()
-        text_entry.set_icon_from_icon_name(
-            Gtk.EntryIconPosition.SECONDARY, "go-next-symbolic"
-        )
-        text_entry.set_icon_activatable(Gtk.EntryIconPosition.SECONDARY, True)
-        text_entry.set_icon_sensitive(Gtk.EntryIconPosition.SECONDARY, True)
-        text_entry.connect("activate", self.send_message)
-        self.pack_start(text_entry, False, False, 0)
+        self.text_entry = MessageEntry()
+        self.text_entry.connect("activate", self.send_message)
+        self.text_entry.set_completions(self.names)
+        self.pack_start(self.text_entry, False, False, 0)
 
     def on_list_names(self, names):
         self._names.extend(names)
 
     def on_end_names(self):
         self.names = self._names
+        self.text_entry.set_completions(self.names)
         self._names = []
 
     def on_message_received(self, user, message):
@@ -156,14 +203,17 @@ class Channel(Gtk.VBox):
 
     def on_user_joined(self, user):
         self.names.append(user)
+        self.text_entry.set_completions(self.names)
 
     def on_user_left(self, user):
         self.names.remove(user)
+        self.text_entry.set_completions(self.names)
 
     def on_user_renamed(self, old_user, new_user):
         if old_user in self.names:
             self.names.remove(old_user)
             self.names.append(new_user)
+        self.text_entry.set_completions(self.names)
 
 
 class ChatWindow(Gtk.Window):
