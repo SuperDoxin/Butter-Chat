@@ -21,8 +21,12 @@
     padding: 4px 8px;
 }
 
-.action{
+.action, .notice{
     margin: 4px;
+}
+
+.notice.error{
+    color: @error_color;
 }
 
 .label_color_h00{color:#e6007b;}

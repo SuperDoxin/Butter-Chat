@@ -209,3 +209,19 @@ def send_message(host, port, channel, message):
         host=host,
         port=port,
     )
+
+
+def send_action(host, port, channel, message):
+    server_id = f"{host}:{port}"
+    client = clients.get(server_id, None)
+    if client is None:
+        raise ValueError(f"Not connected to {server_id}")
+    client.describe(channel, message)
+    _call_handler(
+        "action_received",
+        user=client.nickname,
+        message=message,
+        channel=channel,
+        host=host,
+        port=port,
+    )

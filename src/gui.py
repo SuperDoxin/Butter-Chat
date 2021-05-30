@@ -111,6 +111,26 @@ class Action(Gtk.HBox):
         self.pack_start(message_label, False, False, 0)
 
 
+class Notice(Gtk.HBox):
+    def __init__(self, author, message, names, error=False):
+        Gtk.HBox.__init__(self)
+        add_css_class(self, "notice")
+        if error:
+            add_css_class(self, "error")
+
+        if author:
+            message = author + ": " + message
+
+        message_label = Gtk.Label()
+        message_label.set_markup(
+            markup_urls(message, lambda text: markup_names(text, names))
+        )
+        message_label.set_line_wrap(True)
+        message_label.set_selectable(True)
+        add_css_class(message_label, "message-label")
+        self.pack_start(message_label, False, False, 0)
+
+
 class MessageList(Gtk.VBox):
     def add_message(self, author, message, names):
         message = Message(author, message, names)
@@ -119,6 +139,16 @@ class MessageList(Gtk.VBox):
 
     def add_action(self, author, message, names):
         message = Action(author, message, names)
+        self.pack_start(message, False, False, 0)
+        message.show_all()
+
+    def add_notice(self, author, message, names):
+        message = Notice(author, message, names)
+        self.pack_start(message, False, False, 0)
+        message.show_all()
+
+    def add_error(self, message, names):
+        message = Notice(None, message, names, error=True)
         self.pack_start(message, False, False, 0)
         message.show_all()
 
@@ -200,6 +230,16 @@ class Channel(Gtk.VBox):
         self.text_entry.set_completions(self.names)
         self.pack_start(self.text_entry, False, False, 0)
 
+    def send_command(self, command, args):
+        if command == "say":
+            protocol.send_message(self.host, self.port, self.channel, args)
+        elif command == "me":
+            if not args:
+                return
+            protocol.send_action(self.host, self.port, self.channel, args)
+        else:
+            self.message_list.add_error(f'Unknown command "{command}"', [])
+
     def on_list_names(self, names):
         self._names.extend(names)
 
@@ -214,8 +254,17 @@ class Channel(Gtk.VBox):
     def on_action_received(self, user, message):
         self.message_list.add_action(user, message, self.names)
 
-    def send_message(self, widget):
-        protocol.send_message(self.host, self.port, self.channel, widget.get_text())
+    def send_message(self, widget, do_command=True):
+        text = widget.get_text()
+        if not text:
+            return
+        if text[0] == "/":
+            splat = text[1:].split(" ", 1)
+            if len(splat) == 1:
+                splat.append("")
+            self.send_command(*splat)
+        else:
+            protocol.send_message(self.host, self.port, self.channel, text)
         widget.set_text("")
 
     def on_topic_changed(self, topic):
