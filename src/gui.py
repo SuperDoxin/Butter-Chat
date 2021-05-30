@@ -2,6 +2,7 @@
 import re
 import zlib
 
+from . import colors
 from . import protocol
 
 from . import versions  # noqa nosort
@@ -11,7 +12,32 @@ from gi.repository import GObject  # noqa nosort
 from gi.repository import Gtk  # noqa nosort
 
 
-def markup_urls(text):
+def name_to_color_class(name):
+    hue = zlib.crc32(name.encode("utf-8")) * 90 // 0xFFFFFFFF * 4
+    return f"label_color_h{hue:02d}"
+
+
+def name_to_color(name):
+    hue = zlib.crc32(name.encode("utf-8")) * 90 // 0xFFFFFFFF * 4
+    return colors.name[hue]
+
+
+def markup_names(text, names, additional_markup=GLib.markup_escape_text):
+    output = []
+    regex = "|".join(re.escape(name) for name in names)
+    matches = re.finditer(regex, text)
+    offset = 0
+    for m in matches:
+        output.append(additional_markup(text[offset : m.start()]))
+        escaped_name = GLib.markup_escape_text(m[0])
+        color = name_to_color(m[0])
+        output.append('<span color="' + color + '">' + escaped_name + "</span>")
+        offset = m.end()
+    output.append(additional_markup(text[offset:]))
+    return "".join(output)
+
+
+def markup_urls(text, additional_markup=GLib.markup_escape_text):
     output = []
     matches = re.finditer(
         r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
@@ -19,12 +45,11 @@ def markup_urls(text):
     )
     offset = 0
     for m in matches:
-        print(offset, m.start())
-        output.append(GLib.markup_escape_text(text[offset : m.start()]))
+        output.append(additional_markup(text[offset : m.start()]))
         escaped_url = GLib.markup_escape_text(m[0])
         output.append('<a href="' + escaped_url + '">' + escaped_url + "</a>")
         offset = m.end()
-    output.append(GLib.markup_escape_text(text[offset:]))
+    output.append(additional_markup(text[offset:]))
     return "".join(output)
 
 
@@ -47,7 +72,7 @@ class ChannelStack(Gtk.Stack):
 
 
 class Message(Gtk.VBox):
-    def __init__(self, author, message):
+    def __init__(self, author, message, names):
         Gtk.HBox.__init__(self)
         self.set_hexpand(False)
         add_css_class(self, "message")
@@ -56,26 +81,24 @@ class Message(Gtk.VBox):
         author_label = Gtk.Label(label=author)
         author_label.set_xalign(0)
         add_css_class(author_label, "author")
-        add_css_class(author_label, self._name_to_color_class(author))
+        add_css_class(author_label, name_to_color_class(author))
         self.pack_start(author_label, False, False, 0)
 
         message_label = Gtk.Label()
-        message_label.set_markup(markup_urls(message))
+        message_label.set_markup(
+            markup_urls(message, lambda text: markup_names(text, names))
+        )
         message_label.set_xalign(0)
         message_label.set_line_wrap(True)
         message_label.set_selectable(True)
         add_css_class(message_label, "message-label")
         self.pack_start(message_label, False, False, 0)
 
-    def _name_to_color_class(self, author):
-        hue = zlib.crc32(author.encode("utf-8")) * 90 // 0xFFFFFFFF * 4
-        return f"label_color_h{hue:02d}"
-
 
 class MessageList(Gtk.VBox):
     # TODO: make me collapsible
-    def add_message(self, author, message):
-        message = Message(author, message)
+    def add_message(self, author, message, names):
+        message = Message(author, message, names)
         self.pack_start(message, False, False, 0)
         message.show_all()
 
@@ -86,6 +109,8 @@ class Channel(Gtk.VBox):
         self.host = host
         self.port = port
         self.channel = channel
+        self.names = []
+        self._names = []
 
         self.topic = Gtk.Label(label="No topic set.")
         self.topic.set_line_wrap(True)
@@ -109,8 +134,15 @@ class Channel(Gtk.VBox):
         text_entry.connect("activate", self.send_message)
         self.pack_start(text_entry, False, False, 0)
 
+    def on_list_names(self, names):
+        self._names.extend(names)
+
+    def on_end_names(self):
+        self.names = self._names
+        self._names = []
+
     def on_message_received(self, user, message):
-        self.message_list.add_message(user, message)
+        self.message_list.add_message(user, message, self.names)
 
     def send_message(self, widget):
         protocol.send_message(self.host, self.port, self.channel, widget.get_text())
@@ -121,6 +153,17 @@ class Channel(Gtk.VBox):
             self.topic.set_markup(markup_urls(topic))
         else:
             self.topic.set_text("No topic set.")
+
+    def on_user_joined(self, user):
+        self.names.append(user)
+
+    def on_user_left(self, user):
+        self.names.remove(user)
+
+    def on_user_renamed(self, old_user, new_user):
+        if old_user in self.names:
+            self.names.remove(old_user)
+            self.names.append(new_user)
 
 
 class ChatWindow(Gtk.Window):
@@ -155,8 +198,25 @@ class ChatWindow(Gtk.Window):
         protocol.register_handler("channel_joined", self.on_channel_joined)
         protocol.register_handler("message_received", self.on_message_received)
         protocol.register_handler("topic_changed", self.on_topic_changed)
+        protocol.register_handler("user_joined", self.on_user_joined)
+        protocol.register_handler("user_left", self.on_user_left)
+        protocol.register_handler("user_renamed", self.on_user_renamed)
+        protocol.register_handler("list_names", self.on_list_names)
+        protocol.register_handler("end_names", self.on_end_names)
 
         protocol.connect("butter-client", "irc.libera.chat")
+
+    def on_list_names(self, *, channel, names, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_list_names(names)
+
+    def on_end_names(self, *, channel, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_end_names()
 
     def on_channel_joined(self, *, channel, host, port):
         channel_id = f"{host}:{port}/{channel}"
@@ -175,3 +235,20 @@ class ChatWindow(Gtk.Window):
         channel_widget = self.channel_stack.get_child_by_name(channel_id)
         if channel_widget:
             channel_widget.on_topic_changed(topic)
+
+    def on_user_joined(self, *, user, channel, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_user_joined(user)
+
+    def on_user_left(self, *, user, channel, host, port):
+        channel_id = f"{host}:{port}/{channel}"
+        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if channel_widget:
+            channel_widget.on_user_left(user)
+
+    def on_user_renamed(self, *, old_user, new_user, host, port):
+        for channel_widget in self.channel_stack.get_children():
+            if channel_widget.host == host and channel_widget.port == port:
+                channel_widget.on_user_renamed(old_user, new_user)

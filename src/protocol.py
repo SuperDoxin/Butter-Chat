@@ -9,7 +9,43 @@ signals = {}
 clients = {}
 
 
-class IRCClient(irc.IRCClient):
+class ImprovedBaseIRCClient(irc.IRCClient):
+    def names(self, channel):
+        self.sendLine(f"NAMES {channel}")
+
+    def listNames(self, channel, names):
+        pass
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        channel = params[2]
+        names = params[3]
+        self.listNames(channel, names.split(" "))
+
+    def endNames(self, channel):
+        pass
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1]
+        self.endNames(channel)
+
+    def irc_unknown(self, prefix, command, params):
+        print(
+            "unhandled IRC command:",
+            {"prefix": prefix, "command": command, "params": params},
+        )
+
+    @property
+    def membership_prefixes(self):
+        return [
+            p[0]
+            for p in sorted(
+                self.supported.getFeature("PREFIX", []).values(),
+                key=lambda item: item[1],
+            )
+        ]
+
+
+class IRCClient(ImprovedBaseIRCClient):
     def __init__(self, factory):
         self.factory = factory
         self.nickname = self.factory.nickname
@@ -30,6 +66,32 @@ class IRCClient(irc.IRCClient):
         host = self.factory.host
         port = self.factory.port
         _call_handler("channel_joined", channel=channel, host=host, port=port)
+        _call_handler(
+            "user_joined",
+            user=self.nickname,
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
+    def listNames(self, channel, names):
+        prefixes = self.membership_prefixes
+        filtered_names = [name[1:] if name[0] in prefixes else name for name in names]
+        _call_handler(
+            "list_names",
+            channel=channel,
+            names=filtered_names,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
+    def endNames(self, channel):
+        _call_handler(
+            "end_names",
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
 
     def privmsg(self, user, channel, message):
         _call_handler(
@@ -46,6 +108,35 @@ class IRCClient(irc.IRCClient):
             "topic_changed",
             topic=newTopic,
             channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
+    def userJoined(self, user, channel):
+        _call_handler(
+            "user_joined",
+            user=user.split("!")[0],
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
+    def userLeft(self, user, channel):
+        _call_handler(
+            "user_left",
+            user=user.split("!")[0],
+            channel=channel,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+
+    # TODO: userQuit
+
+    def userRenamed(self, oldname, newname):
+        _call_handler(
+            "user_renamed",
+            old_user=oldname,
+            new_user=newname,
             host=self.factory.host,
             port=self.factory.port,
         )
