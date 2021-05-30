@@ -96,6 +96,8 @@ class IRCClient(ImprovedBaseIRCClient):
     def privmsg(self, user, channel, message):
         if channel == self.nickname:
             channel = user.split("!")[0]
+        if channel == "*":
+            channel = self.factory.host
         _call_handler(
             "message_received",
             user=user.split("!")[0],
@@ -108,6 +110,8 @@ class IRCClient(ImprovedBaseIRCClient):
     def action(self, user, channel, message):
         if channel == self.nickname:
             channel = user.split("!")[0]
+        if channel == "*":
+            channel = self.factory.host
         _call_handler(
             "action_received",
             user=user.split("!")[0],
@@ -120,6 +124,8 @@ class IRCClient(ImprovedBaseIRCClient):
     def noticed(self, user, channel, message):
         if channel == self.nickname:
             channel = user.split("!")[0]
+        if channel == "*":
+            channel = self.factory.host
         _call_handler(
             "notice_received",
             user=user.split("!")[0],
