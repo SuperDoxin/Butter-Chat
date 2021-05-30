@@ -59,7 +59,7 @@ class IRCClient(ImprovedBaseIRCClient):
             clients.pop(server_id)
 
     def signedOn(self):
-        self.join("##butter-test")
+        self.join("#butter-chat")
         # self.join("#powder")
 
     def joined(self, channel):

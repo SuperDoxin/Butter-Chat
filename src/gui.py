@@ -4,6 +4,7 @@ import zlib
 
 from . import colors
 from . import protocol
+from .namegen import generate_name
 
 from . import versions  # noqa nosort
 from gi.repository import Gdk  # noqa nosort
@@ -333,7 +334,7 @@ class ChatWindow(Gtk.Window):
         protocol.register_handler("list_names", self.on_list_names)
         protocol.register_handler("end_names", self.on_end_names)
 
-        protocol.connect("butter-client", "irc.libera.chat")
+        protocol.connect(generate_name(), "irc.libera.chat")
 
     def get_channel_widget(self, channel, host, port, create=False):
         channel_id = f"{host}:{port}/{channel}"
