@@ -254,6 +254,9 @@ class Channel(Gtk.VBox):
     def on_action_received(self, user, message):
         self.message_list.add_action(user, message, self.names)
 
+    def on_notice_received(self, user, message):
+        self.message_list.add_notice(user, message, self.names)
+
     def send_message(self, widget, do_command=True):
         text = widget.get_text()
         if not text:
@@ -320,6 +323,7 @@ class ChatWindow(Gtk.Window):
         protocol.register_handler("channel_joined", self.on_channel_joined)
         protocol.register_handler("message_received", self.on_message_received)
         protocol.register_handler("action_received", self.on_action_received)
+        protocol.register_handler("notice_received", self.on_notice_received)
         protocol.register_handler("topic_changed", self.on_topic_changed)
         protocol.register_handler("user_joined", self.on_user_joined)
         protocol.register_handler("user_left", self.on_user_left)
@@ -329,15 +333,22 @@ class ChatWindow(Gtk.Window):
 
         protocol.connect("butter-client", "irc.libera.chat")
 
-    def on_list_names(self, *, channel, names, host, port):
+    def get_channel_widget(self, channel, host, port, create=False):
         channel_id = f"{host}:{port}/{channel}"
         channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        if create and not channel_widget:
+            channel_widget = Channel(host, port, channel)
+            channel_widget.show_all()
+            self.channel_stack.add_titled(channel_widget, channel_id, channel)
+        return channel_widget
+
+    def on_list_names(self, *, channel, names, host, port):
+        channel_widget = self.get_channel_widget(channel, host, port)
         if channel_widget:
             channel_widget.on_list_names(names)
 
     def on_end_names(self, *, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        channel_widget = self.get_channel_widget(channel, host, port)
         if channel_widget:
             channel_widget.on_end_names()
 
@@ -348,32 +359,29 @@ class ChatWindow(Gtk.Window):
         self.channel_stack.add_titled(channel_widget, channel_id, channel)
 
     def on_message_received(self, *, user, message, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
-        if channel_widget:
-            channel_widget.on_message_received(user, message)
+        channel_widget = self.get_channel_widget(channel, host, port, True)
+        channel_widget.on_message_received(user, message)
 
     def on_action_received(self, *, user, message, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
-        if channel_widget:
-            channel_widget.on_action_received(user, message)
+        channel_widget = self.get_channel_widget(channel, host, port, True)
+        channel_widget.on_action_received(user, message)
+
+    def on_notice_received(self, *, user, message, channel, host, port):
+        channel_widget = self.get_channel_widget(channel, host, port, True)
+        channel_widget.on_notice_received(user, message)
 
     def on_topic_changed(self, *, topic, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        channel_widget = self.get_channel_widget(channel, host, port)
         if channel_widget:
             channel_widget.on_topic_changed(topic)
 
     def on_user_joined(self, *, user, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        channel_widget = self.get_channel_widget(channel, host, port)
         if channel_widget:
             channel_widget.on_user_joined(user)
 
     def on_user_left(self, *, user, channel, host, port):
-        channel_id = f"{host}:{port}/{channel}"
-        channel_widget = self.channel_stack.get_child_by_name(channel_id)
+        channel_widget = self.get_channel_widget(channel, host, port)
         if channel_widget:
             channel_widget.on_user_left(user)
 
