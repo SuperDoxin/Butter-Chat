@@ -29,7 +29,7 @@ Install pre-commit globally
 
 Clone the repository
 
-    git clone git@github.com:SuperDoxin/Butter-Chat.git
+    git clone https://github.com/SuperDoxin/Butter-Chat.git
 
 Change into the repository folder
 
