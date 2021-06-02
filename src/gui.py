@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
-import zlib
 
-from . import colors
 from . import protocol
+from .identicon import get_identicon
+from .identicon import name_to_color
+from .identicon import name_to_color_class
 from .namegen import generate_name
 
 from . import versions  # noqa nosort
@@ -11,16 +12,6 @@ from gi.repository import Gdk  # noqa nosort
 from gi.repository import GLib  # noqa nosort
 from gi.repository import GObject  # noqa nosort
 from gi.repository import Gtk  # noqa nosort
-
-
-def name_to_color_class(name):
-    hue = zlib.crc32(name.encode("utf-8")) * 90 // 0xFFFFFFFF * 4
-    return f"label_color_h{hue:02d}"
-
-
-def name_to_color(name):
-    hue = zlib.crc32(name.encode("utf-8")) * 90 // 0xFFFFFFFF * 4
-    return colors.name[hue]
 
 
 def markup_names(text, names, additional_markup=GLib.markup_escape_text):
@@ -73,18 +64,29 @@ class ChannelStack(Gtk.Stack):
         self.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
 
 
-class Message(Gtk.VBox):
+class Message(Gtk.HBox):
     def __init__(self, author, message, names):
-        Gtk.VBox.__init__(self)
-        self.set_hexpand(False)
+        Gtk.HBox.__init__(self)
+
         add_css_class(self, "message")
-        self.props.halign = Gtk.Align.START
+
+        profile_image = Gtk.Image.new_from_pixbuf(get_identicon(author))
+        profile_image.set_size_request(32, 32)
+        profile_image.props.valign = Gtk.Align.END
+        self.pack_start(profile_image, False, False, 0)
+
+        vbox = Gtk.VBox()
+        self.pack_start(vbox, True, True, 0)
+
+        vbox.set_hexpand(False)
+        add_css_class(vbox, "content")
+        vbox.props.halign = Gtk.Align.START
 
         author_label = Gtk.Label(label=author)
         author_label.set_xalign(0)
         add_css_class(author_label, "author")
         add_css_class(author_label, name_to_color_class(author))
-        self.pack_start(author_label, False, False, 0)
+        vbox.pack_start(author_label, False, False, 0)
 
         message_label = Gtk.Label()
         message_label.set_markup(
@@ -94,7 +96,7 @@ class Message(Gtk.VBox):
         message_label.set_line_wrap(True)
         message_label.set_selectable(True)
         add_css_class(message_label, "message-label")
-        self.pack_start(message_label, False, False, 0)
+        vbox.pack_start(message_label, False, False, 0)
 
 
 class Action(Gtk.HBox):

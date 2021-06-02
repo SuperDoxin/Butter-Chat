@@ -14,7 +14,7 @@
     margin-bottom: 10px
 }
 
-.message{
+.message .content{
     background: @theme_base_color;
     border-radius: 8px 8px 8px 0px;
     margin:4px;
