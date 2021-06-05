@@ -236,12 +236,41 @@ class Channel(Gtk.VBox):
         self.pack_start(self.text_entry, False, False, 0)
 
     def send_command(self, command, args):
+        command = command.lower()
         if command == "say":
             protocol.send_message(self.host, self.port, self.channel, args)
         elif command == "me":
             if not args:
                 return
             protocol.send_action(self.host, self.port, self.channel, args)
+        elif command == "nick":
+            if " " in args:
+                self.message_list.add_error(
+                    "Nickname cannot contain spaces", self.names
+                )
+                return
+            protocol.change_nick(args)
+        elif command == "join":
+            if " " in args:
+                self.message_list.add_error(
+                    "Channel name cannot contain spaces", self.names
+                )
+                return
+            if "," in args:
+                self.message_list.add_error(
+                    "Channel name cannot contain commas", self.names
+                )
+                return
+            if "\x07" in args:
+                self.message_list.add_error(
+                    "Channel name cannot contain bell characters", self.names
+                )
+                return
+
+            if args[0] not in "#&":
+                args = "#" + args
+
+            protocol.join_channel(self.host, self.port, args)
         else:
             self.message_list.add_error(f'Unknown command "{command}"', [])
 

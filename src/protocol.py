@@ -173,6 +173,16 @@ class IRCClient(ImprovedBaseIRCClient):
             port=self.factory.port,
         )
 
+    def nickChanged(self, nick):
+        _call_handler(
+            "user_renamed",
+            old_user=self.nickname,
+            new_user=nick,
+            host=self.factory.host,
+            port=self.factory.port,
+        )
+        super().nickChanged(nick)
+
 
 class IRCClientFactory(protocol.ClientFactory):
     def __init__(self, nickname, host, port):
@@ -247,3 +257,16 @@ def send_action(host, port, channel, message):
         host=host,
         port=port,
     )
+
+
+def change_nick(nick):
+    for client in clients.values():
+        client.setNick(nick)
+
+
+def join_channel(host, port, channel):
+    server_id = f"{host}:{port}"
+    client = clients.get(server_id, None)
+    if client is None:
+        raise ValueError(f"Not connected to {server_id}")
+    client.join(channel)
